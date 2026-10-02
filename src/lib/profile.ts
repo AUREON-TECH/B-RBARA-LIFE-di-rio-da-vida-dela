@@ -2,8 +2,10 @@ export type ProfileTheme = 'rose' | 'light' | 'night'
 
 const MAX_PROFILE_IMAGE_BYTES = 128 * 1024
 const PIN_ITERATIONS = 120_000
-export const DIARY_PIN_STORAGE_KEY = 'barbara_life_diary_pin_v1'
-export const THEME_STORAGE_KEY = 'barbara_life_theme_v1'
+const LEGACY_DIARY_PIN_STORAGE_KEY = 'barbara_life_diary_pin_v1'
+const LEGACY_THEME_STORAGE_KEY = 'barbara_life_theme_v1'
+export const DIARY_PIN_STORAGE_KEY = 'conexao_ela_diary_pin_v1'
+export const THEME_STORAGE_KEY = 'conexao_ela_theme_v1'
 
 export type DiaryPinRecord = {
   version: 1
@@ -22,10 +24,20 @@ export function applyTheme(value: unknown) {
   return theme
 }
 
+function readMigratedLocalValue(currentKey: string, legacyKey: string) {
+  try {
+    const current = localStorage.getItem(currentKey)
+    if (current !== null) return current
+    const legacy = localStorage.getItem(legacyKey)
+    if (legacy !== null) localStorage.setItem(currentKey, legacy)
+    return legacy
+  } catch {
+    return null
+  }
+}
+
 export function restoreTheme() {
-  let stored: string | null = null
-  try { stored = localStorage.getItem(THEME_STORAGE_KEY) } catch {}
-  return applyTheme(stored)
+  return applyTheme(readMigratedLocalValue(THEME_STORAGE_KEY, LEGACY_THEME_STORAGE_KEY))
 }
 
 export function isDiaryPinValid(pin: string) {
@@ -77,7 +89,7 @@ export async function createDiaryPinRecord(pin: string): Promise<DiaryPinRecord>
 
 export function loadDiaryPinRecord(): DiaryPinRecord | null {
   try {
-    const raw = localStorage.getItem(DIARY_PIN_STORAGE_KEY)
+    const raw = readMigratedLocalValue(DIARY_PIN_STORAGE_KEY, LEGACY_DIARY_PIN_STORAGE_KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw) as DiaryPinRecord
     if (parsed?.version !== 1 || typeof parsed.salt !== 'string' || typeof parsed.hash !== 'string') return null
