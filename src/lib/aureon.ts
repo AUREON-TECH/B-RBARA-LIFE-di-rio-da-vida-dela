@@ -1,6 +1,5 @@
 const API_URL = String(import.meta.env.VITE_AUREON_API_URL || 'https://aureonbase.vercel.app').replace(/\/$/, '')
 export const PROJECT_SLUG = 'barbara-life'
-export const BARBARA_EMAIL = 'barbaraloiolalimasilva@gmail.com'
 
 const ACCESS_KEY = 'barbara_life_access_token'
 const REFRESH_KEY = 'barbara_life_refresh_token'
@@ -37,12 +36,16 @@ type StorageObject = {
 
 type RequestOptions = RequestInit & { retry?: boolean }
 
-export function isBarbaraEmail(email: string) {
-  return email.trim().toLowerCase() === BARBARA_EMAIL
-}
-
 export function isValidNewPassword(password: string) {
   return password.length >= 10 && password.length <= 128
+}
+
+export function buildRegistrationPayload(email: string, password: string) {
+  return {
+    email: email.trim().toLowerCase(),
+    password,
+    project_slug: PROJECT_SLUG,
+  }
 }
 
 export function flattenRecord<T extends Record<string, unknown>>(record: AureonRecord<T>): T & { id: string; created_at?: string; updated_at?: string } {
@@ -123,17 +126,33 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   return data as T
 }
 
-async function assertBarbaraAccess(user: AureonUser) {
-  if (!isBarbaraEmail(user.email)) {
-    clearTokens()
-    throw new Error('unauthorized_user')
+async function joinPublicProject() {
+  await request<{ access?: { allowed?: boolean } }>(`/projects/${PROJECT_SLUG}/join`, {
+    method: 'POST',
+    retry: false,
+  })
+}
+
+async function assertProjectAccess(user: AureonUser, options: { joinIfPublic?: boolean } = {}) {
+  const check = async () => request<{ access?: { allowed?: boolean } }>(`/projects/${PROJECT_SLUG}/access`)
+  try {
+    const access = await check()
+    if (access?.access?.allowed) return user
+    if (options.joinIfPublic) {
+      await joinPublicProject()
+      const joined = await check()
+      if (joined?.access?.allowed) return user
+    }
+  } catch (error) {
+    const status = (error as Error & { status?: number }).status
+    if (options.joinIfPublic && (status === 402 || status === 403)) {
+      await joinPublicProject()
+      const joined = await check()
+      if (joined?.access?.allowed) return user
+    }
   }
-  const access = await request<{ access?: { allowed?: boolean } }>(`/projects/${PROJECT_SLUG}/access`)
-  if (!access?.access?.allowed) {
-    clearTokens()
-    throw new Error('project_access_denied')
-  }
-  return user
+  clearTokens()
+  throw new Error('project_access_denied')
 }
 
 async function listRecords<T extends Record<string, unknown>>(collection: string, limit = 500) {
@@ -172,7 +191,17 @@ export const aureon = {
         retry: false,
       })
       persistTokens(data)
-      await assertBarbaraAccess(data.user)
+      await assertProjectAccess(data.user, { joinIfPublic: true })
+      return data.user
+    },
+    async register(email: string, password: string) {
+      const data = await request<{ user: AureonUser; access_token: string; refresh_token: string }>('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(buildRegistrationPayload(email, password)),
+        retry: false,
+      })
+      persistTokens(data)
+      await assertProjectAccess(data.user)
       return data.user
     },
     async getGoogleConfig() {
@@ -185,14 +214,14 @@ export const aureon = {
         retry: false,
       })
       persistTokens(data)
-      await assertBarbaraAccess(data.user)
+      await assertProjectAccess(data.user)
       return data.user
     },
     async restore() {
       if (!accessToken && !refreshToken) return null
       try {
         const user = await request<AureonUser>('/me')
-        return await assertBarbaraAccess(user)
+        return await assertProjectAccess(user)
       } catch {
         clearTokens()
         return null
