@@ -207,7 +207,7 @@ export function ProfilePage({ userId, email, onLogout, onPasswordChanged }: Prop
             <input type="file" accept="image/*" capture="user" onChange={(event) => void uploadPhoto(event)} disabled={uploading} />
           </label>
         </div>
-        <div><span className="card-kicker">Conexão Ela</span><h1>{profile.display_name || 'Bárbara'}</h1><p>{email}</p><small>Seu perfil, do seu jeito.</small></div>
+        <div><span className="card-kicker">Conexão Ela</span><h1>{profile.display_name || 'Meu perfil'}</h1><p>{email}</p><small>Seu perfil, do seu jeito.</small></div>
       </section>
 
       {loading ? <section className="card"><p className="muted">Carregando seu perfil…</p></section> : (
