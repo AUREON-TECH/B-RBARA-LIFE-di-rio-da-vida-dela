@@ -13,7 +13,7 @@ const navigation = [
   ['/saude', '♡', 'Saúde'],
   ['/beleza', '✦', 'Beleza'],
   ['/evolucao', '↗', 'Evolução'],
-  ['/barbara', '◌', 'Bárbara'],
+  ['/perfil', '◌', 'Perfil'],
 ] as const
 
 function signupErrorMessage(error: SignupError) {
@@ -127,7 +127,7 @@ function AuthScreen({ onLogin }: { onLogin: (user: AureonUser, notice?: string) 
 }
 
 function LoadingScreen() {
-  return <main className="loading-page"><div className="loading-mark">B</div><p>Preparando seu espaço…</p></main>
+  return <main className="loading-page"><div className="loading-mark">CE</div><p>Preparando seu espaço…</p></main>
 }
 
 function DiaryGate({ userId }: { userId: string }) {
@@ -176,7 +176,7 @@ function AppShell({ user, onLogout, onPasswordChanged }: { user: AureonUser; onL
   return (
     <div className="app-frame">
       <header className="topbar">
-        <div className="mini-brand"><span>B</span><div><strong>Bárbara Life</strong><small>Seu espaço pessoal</small></div></div>
+        <div className="mini-brand"><span>CE</span><div><strong>Conexão Ela</strong><small>Conexão, comunidade e cuidado</small></div></div>
         <div className="topbar-heart" aria-hidden="true">♥</div>
       </header>
       <main className="content-area">
@@ -187,7 +187,8 @@ function AppShell({ user, onLogout, onPasswordChanged }: { user: AureonUser; onL
           <Route path="/saude" element={<HealthPage userId={user.id} />} />
           <Route path="/beleza" element={<BeautyPage userId={user.id} />} />
           <Route path="/evolucao" element={<EvolutionPage userId={user.id} />} />
-          <Route path="/barbara" element={<ProfilePage userId={user.id} email={user.email} onLogout={onLogout} onPasswordChanged={onPasswordChanged} />} />
+          <Route path="/perfil" element={<ProfilePage userId={user.id} email={user.email} onLogout={onLogout} onPasswordChanged={onPasswordChanged} />} />
+          <Route path="/barbara" element={<Navigate to="/perfil" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
