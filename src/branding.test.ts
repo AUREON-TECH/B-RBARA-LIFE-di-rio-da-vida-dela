@@ -1,8 +1,8 @@
-import { readFileSync } from 'node:fs'
+import indexHtml from '../index.html?raw'
+import manifestRaw from '../public/manifest.webmanifest?raw'
 import { describe, expect, it } from 'vitest'
 
-const indexHtml = readFileSync(new URL('../index.html', import.meta.url), 'utf8')
-const manifest = JSON.parse(readFileSync(new URL('../public/manifest.webmanifest', import.meta.url), 'utf8')) as {
+const manifest = JSON.parse(manifestRaw) as {
   name: string
   short_name: string
   description: string
