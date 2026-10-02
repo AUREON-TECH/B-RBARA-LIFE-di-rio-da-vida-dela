@@ -28,7 +28,7 @@
 ## Review Focus
 
 1. **Projeto legado com cadastro atual:** projetos diferentes de `barbara-life` devem manter exatamente o comportamento anterior de `ALLOWED_EMAILS` e trial.
-2. **E-mail já existente:** cadastro deve retornar conflito sem criar membership/subscription duplicados e o login existente continua disponível.
+2. **E-mail já existente em outro produto AUREON:** a usuária deve autenticar com a senha existente e conseguir aderir ao projeto público CONEXÃO ELA sem duplicar o usuário, membership ou subscription.
 3. **Duas usuárias no mesmo projeto:** cada uma deve listar/alterar apenas seus próprios registros owner-scoped.
 4. **Bárbara em dispositivo antigo:** PIN e tema salvos em chaves `barbara_life_*` devem continuar carregando após a mudança de marca.
 5. **Link antigo em produção:** `/barbara-life/` deve redirecionar para `/conexao-ela/` sem loop e sem apontar para a identidade antiga.
@@ -48,7 +48,8 @@
 - Produces: `registrationAllowed({ mode, email, allowedEmails }): boolean`
 - Produces: `defaultAccessStatus(project, email, lifetimeEmails): 'trialing' | 'lifetime'`
 - Produces project fields `registration_mode` and `default_access_status` from `projectBySlug(slug)`.
-- Later tasks consume the unchanged public `POST /auth/register` route, now project-scoped.
+- Produces authenticated `POST /projects/:slug/join` for public projects only.
+- Later tasks consume `POST /auth/register` for new users and `POST /projects/:slug/join` for an already-authenticated AUREON user joining CONEXÃO ELA.
 
 - [ ] **Step 1: Write the failing policy tests**
 
@@ -59,7 +60,8 @@ Create `test/registrationPolicy.test.js` with assertions:
 - mode `legacy` with a non-empty allowlist accepts only listed e-mails;
 - project default `lifetime` returns `lifetime`;
 - an e-mail listed in `LIFETIME_EMAILS` still returns `lifetime` for legacy/trial projects;
-- otherwise returns `trialing`.
+- otherwise returns `trialing`;
+- public join policy refuses `closed` and `legacy` projects and permits only `registration_mode='public'`.
 
 - [ ] **Step 2: Run the new test and verify RED**
 
@@ -98,9 +100,10 @@ Modify:
 - `projectBySlug()` to select `registration_mode` and `default_access_status`;
 - `/auth/register` to use `registrationAllowed(...)`;
 - return `registration_closed` when a closed project is targeted and preserve `email_not_allowed` for legacy allowlist rejection;
-- `enrollUser()` to use `defaultAccessStatus(...)`: insert/update lifetime for CONEXÃO ELA, otherwise preserve trial behavior.
+- `enrollUser()` to use `defaultAccessStatus(...)`: insert/update lifetime for CONEXÃO ELA, otherwise preserve trial behavior;
+- add authenticated `POST /projects/:slug/join`: require an existing valid session, require `registration_mode='public'`, call `enrollUser`, return project/subscription/access, and stay idempotent when membership already exists.
 
-Do not change `/auth/login`, refresh, sessions or password hashing.
+Do not change password hashing, refresh-token validation or session cryptography.
 
 - [ ] **Step 7: Add regression assertions for legacy projects**
 
@@ -129,7 +132,8 @@ git commit -m "feat: add project-scoped public registration policy"
 **Interfaces:**
 - Consumes: `POST /auth/register` from Task 1 with body `{ email, password, project_slug }`.
 - Produces: `aureon.auth.register(email: string, password: string): Promise<AureonUser>`
-- Produces: `assertProjectAccess(user: AureonUser): Promise<AureonUser>` internal helper.
+- Produces: `assertProjectAccess(user: AureonUser, options?: { joinIfPublic?: boolean }): Promise<AureonUser>` internal helper.
+- Produces: `joinPublicProject(): Promise<void>` internal request to `POST /projects/barbara-life/join`.
 - Existing `aureon.auth.login`, `restore`, `logout`, data and storage interfaces remain callable.
 
 - [ ] **Step 1: Replace the single-user tests with multiuser expectations**
@@ -151,7 +155,9 @@ In `src/lib/aureon.ts`:
 - rename/replace `assertBarbaraAccess` with `assertProjectAccess`;
 - authorization check must depend only on authenticated project membership/access, never a hardcoded e-mail;
 - add `register(email,password)` posting to `/auth/register` with `project_slug: PROJECT_SLUG`;
-- persist returned tokens and then verify project access;
+- normal `login(email,password)` persists tokens, then if this already-valid AUREON user lacks membership, call `POST /projects/barbara-life/join` once and re-check access;
+- `restore()` must **not** silently join projects; it only restores an existing Conexão Ela membership;
+- persist returned tokens and verify project access;
 - keep `PROJECT_SLUG='barbara-life'`.
 
 - [ ] **Step 4: Run targeted tests and verify GREEN**
@@ -221,7 +227,7 @@ In `src/App.tsx`:
 - submit signup via `aureon.auth.register`;
 - after successful account creation, upsert owner-scoped `profiles` record `profile_key='main'`, `display_name=<nome>`;
 - if profile upsert fails after account creation, keep the authenticated account and show a non-blocking prompt to finish the profile later;
-- duplicate e-mail produces friendly “Este e-mail já possui uma conta. Entre com sua senha.”
+- duplicate e-mail produces friendly “Este e-mail já possui uma conta. Entre com sua senha.”; after she switches to Entrar and supplies the correct existing password, the authenticated public-join flow enrolls her into CONEXÃO ELA.
 
 - [ ] **Step 6: Update auth styling for mobile and desktop**
 
@@ -444,6 +450,7 @@ Against production:
 - confirm register returns project access `lifetime`;
 - login/logout/login succeeds;
 - duplicate registration is rejected;
+- an existing AUREON account that is not yet a member can log in with its existing password and is enrolled into CONEXÃO ELA exactly once;
 - delete/deactivate the disposable test user afterward using an authorized administrative workflow if available.
 
 Do not use Bárbara's credentials for this test.
@@ -486,6 +493,7 @@ Any fix must follow RED → GREEN before commit. Otherwise no extra commit.
 Phase 1 is complete only when all are true:
 
 - A new woman with only the public link can create an account using name, e-mail and password.
+- An existing AUREON user can use the same account and join CONEXÃO ELA after successful password authentication.
 - Her subscription/access in project `barbara-life` is `lifetime`.
 - Existing projects keep legacy registration/trial behavior.
 - Hardcoded Bárbara e-mail restriction is gone.
