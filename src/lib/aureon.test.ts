@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { flattenRecord, isBarbaraEmail, isValidNewPassword } from './aureon'
+import { buildRegistrationPayload, flattenRecord, isValidNewPassword } from './aureon'
 
 describe('AUREON record helpers', () => {
   it('flattens AUREON project records into app rows', () => {
@@ -11,9 +11,12 @@ describe('AUREON record helpers', () => {
     })
   })
 
-  it('only accepts the authorized Bárbara email', () => {
-    expect(isBarbaraEmail('Barbaraloiolalimasilva@gmail.com')).toBe(true)
-    expect(isBarbaraEmail('outra@pessoa.com')).toBe(false)
+  it('builds a normalized Conexão Ela registration payload', () => {
+    expect(buildRegistrationPayload(' Nova@example.test ', '1234567890')).toEqual({
+      email: 'nova@example.test',
+      password: '1234567890',
+      project_slug: 'barbara-life',
+    })
   })
 
   it('requires at least ten characters for a new password', () => {
