@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react'
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import { GoogleSignInButton } from './components/GoogleSignInButton'
-import { aureon, BARBARA_EMAIL, type AureonUser } from './lib/aureon'
+import { aureon, type AureonUser } from './lib/aureon'
 import { loadDiaryPinRecord, restoreTheme, verifyDiaryPin } from './lib/profile'
 import { BeautyPage, DiaryPage, EvolutionPage, GoalsPage, HealthPage, TodayPage } from './pages'
 import { ProfilePage } from './ProfilePage'
@@ -17,7 +17,7 @@ const navigation = [
 ] as const
 
 function LoginScreen({ onLogin }: { onLogin: (user: AureonUser) => void }) {
-  const [email, setEmail] = useState(BARBARA_EMAIL)
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
