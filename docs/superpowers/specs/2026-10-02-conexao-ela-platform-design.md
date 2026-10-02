@@ -100,11 +100,9 @@ O **Meu Espaço** ficará disponível pelo perfil e/ou atalho próprio.
 
 O AUREON Base continua como backend central.
 
-O projeto lógico continuará inicialmente no slug existente para preservar dados, mas o design deve permitir a migração controlada para um slug de marca, por exemplo:
+No MVP, o **slug técnico atual será preservado** para evitar qualquer risco aos dados já existentes. A marca exibida em toda a experiência será CONEXÃO ELA.
 
-`conexao-ela`
-
-Essa alteração só deve ocorrer se a migração puder preservar memberships, subscriptions e owner_user_id dos registros existentes.
+Uma eventual troca do slug técnico para `conexao-ela` fica fora do MVP e só poderá ocorrer em uma migração separada, com preservação comprovada de memberships, subscriptions, storage e owner_user_id.
 
 ### Banco e autorização
 
@@ -121,8 +119,8 @@ Para o CONEXÃO ELA:
 
 - cadastro público habilitado por configuração do projeto;
 - assinatura criada automaticamente com status `lifetime`;
-- dados privados continuam owner-scoped;
-- dados sociais recebem políticas próprias de visibilidade.
+- dados privados continuam no mecanismo genérico owner-scoped já usado pelo Meu Espaço;
+- dados sociais **não** serão armazenados como coleções privadas genéricas: feed, conexões, comunidades, mensagens, notificações, denúncias e eventos usarão tabelas SQL dedicadas no AUREON Base, com autorização explícita por endpoint.
 
 ---
 
@@ -137,6 +135,8 @@ A usuária verá:
 - “Criar minha conta”.
 
 ### Cadastro
+
+O front-end enviará o slug técnico do projeto junto ao cadastro. O backend só aceitará o cadastro público quando o projeto estiver explicitamente configurado para isso; caso contrário mantém o comportamento fechado atual.
 
 Campos mínimos:
 
@@ -504,10 +504,12 @@ Nenhuma migração destrutiva será aceita.
 
 ## 16. Modelo de dados social
 
-Novas coleções/tabelas esperadas:
+Os módulos sociais usarão **tabelas SQL dedicadas** no AUREON Base. O mecanismo genérico de registros owner-scoped continuará reservado ao Meu Espaço e outros dados privados.
 
-### profiles
-- owner_user_id
+Novas tabelas esperadas:
+
+### social_profiles
+- user_id (PK/FK para users)
 - display_name
 - username
 - bio
@@ -642,7 +644,7 @@ Restrição única: post_id + user_id.
 ## 17. Visibilidade e autorização
 
 ### Dados privados
-Sempre owner-scoped.
+Sempre owner-scoped pelo backend. O cliente nunca envia um owner_user_id confiável como mecanismo de autorização; o servidor deriva o proprietário da sessão autenticada.
 
 ### Perfil social
 Leitura conforme visibilidade definida.
