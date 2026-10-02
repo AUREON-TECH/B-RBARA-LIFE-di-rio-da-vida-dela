@@ -108,7 +108,7 @@ export function TodayPage({ userId }: PageProps) {
   return (
     <div className="page-stack">
       <section className="hero-card">
-        <div><p className="eyebrow">{prettyDate()}</p><h1>{greeting()}, Bárbara <span aria-hidden="true">💗</span></h1><p className="hero-subtitle">Como você quer se sentir hoje?</p></div>
+        <div><p className="eyebrow">{prettyDate()}</p><h1>{greeting()}! <span aria-hidden="true">💗</span></h1><p className="hero-subtitle">Como você quer se sentir hoje?</p></div>
         <div className="soft-orb" aria-hidden="true">B</div>
       </section>
       <section className="card quote-card"><span className="card-kicker">Frase do dia</span><blockquote>“{getDailyQuote(new Date())}”</blockquote></section>
@@ -119,7 +119,7 @@ export function TodayPage({ userId }: PageProps) {
       <section className="card">
         <div className="section-heading"><div><span className="card-kicker">Minhas metas de hoje</span><h2>{completed} de {goals.length} concluídas — {completion}%</h2></div><span className="progress-badge">{completion}%</span></div>
         <div className="progress-track"><div className="progress-fill" style={{ width: `${completion}%` }} /></div>
-        {completion === 100 && goals.length > 0 && <div className="celebration">🎉 Você conseguiu, Bárbara! Dia concluído.</div>}
+        {completion === 100 && goals.length > 0 && <div className="celebration">🎉 Você conseguiu! Dia concluído.</div>}
         <div className="goal-list">{goals.length === 0 && <p className="empty-copy">Comece pequeno. Uma meta simples já transforma o ritmo do dia.</p>}{goals.map((goal) => <label className="goal-row" key={goal.id}><input type="checkbox" checked={goal.completed} onChange={() => void toggleGoal(goal)} /><span className={goal.completed ? 'done' : ''}>{goal.title}</span></label>)}</div>
         <form className="inline-form" onSubmit={addGoal}><input value={newGoal} onChange={(e) => setNewGoal(e.target.value)} placeholder="Adicionar uma meta para hoje" aria-label="Nova meta" /><button className="primary-button compact" type="submit">Adicionar</button></form>
       </section>
