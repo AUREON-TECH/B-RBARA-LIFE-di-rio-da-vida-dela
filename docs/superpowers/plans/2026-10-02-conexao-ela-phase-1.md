@@ -322,6 +322,7 @@ git commit -m "refactor: generalize private space for every Conexão Ela user"
 ### Task 5: Marca, PWA e metadados CONEXÃO ELA
 
 **Files:**
+- Create: `src/branding.test.ts`
 - Modify: `package.json`
 - Modify: `index.html`
 - Modify: `public/manifest.webmanifest`
@@ -335,14 +336,14 @@ git commit -m "refactor: generalize private space for every Conexão Ela user"
 
 - [ ] **Step 1: Add a branding regression test**
 
-Create or extend a Vitest test that reads the source metadata files and asserts:
+Create `src/branding.test.ts` using Node `fs` to read the source metadata files and assert:
 - `index.html` title/description contain Conexão Ela;
 - manifest `name` and `short_name` contain Conexão Ela;
 - public metadata no longer contains “Diário da Bárbara” or “Bárbara Life”.
 
 - [ ] **Step 2: Run branding test and verify RED**
 
-Run targeted Vitest test.  
+Run: `npm test -- --run src/branding.test.ts`  
 Expected: FAIL on current BÁRBARA LIFE metadata.
 
 - [ ] **Step 3: Update product metadata and icon source**
