@@ -3,6 +3,7 @@ import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import { aureon, type AureonUser } from './lib/aureon'
 import { loadDiaryPinRecord, restoreTheme, verifyDiaryPin } from './lib/profile'
 import { validateSignup, type SignupError } from './lib/signup'
+import { saveSessionNotice, takeSessionNotice } from './lib/sessionNotice'
 import { BeautyPage, DiaryPage, EvolutionPage, GoalsPage, HealthPage, TodayPage } from './pages'
 import { ProfilePage } from './ProfilePage'
 
@@ -173,6 +174,7 @@ function DiaryGate({ userId }: { userId: string }) {
 }
 
 function AppShell({ user, onLogout, onPasswordChanged }: { user: AureonUser; onLogout: () => Promise<void>; onPasswordChanged: () => void }) {
+  const [notice] = useState(() => takeSessionNotice())
   return (
     <div className="app-frame">
       <header className="topbar">
@@ -180,6 +182,7 @@ function AppShell({ user, onLogout, onPasswordChanged }: { user: AureonUser; onL
         <div className="topbar-heart" aria-hidden="true">♥</div>
       </header>
       <main className="content-area">
+        {notice && <div className="global-notice" role="status">{notice}</div>}
         <Routes>
           <Route path="/" element={<TodayPage userId={user.id} />} />
           <Route path="/metas" element={<GoalsPage userId={user.id} />} />
@@ -223,6 +226,6 @@ export default function App() {
   }
 
   if (loading) return <LoadingScreen />
-  if (!user) return <AuthScreen onLogin={(nextUser, notice) => { setUser(nextUser); if (notice) window.sessionStorage.setItem('conexao_ela_notice', notice) }} />
+  if (!user) return <AuthScreen onLogin={(nextUser, notice) => { if (notice) saveSessionNotice(notice); setUser(nextUser) }} />
   return <AppShell user={user} onLogout={logout} onPasswordChanged={() => setUser(null)} />
 }
