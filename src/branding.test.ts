@@ -1,5 +1,7 @@
 import indexHtml from '../index.html?raw'
 import manifestRaw from '../public/manifest.webmanifest?raw'
+import serviceWorkerRaw from '../public/sw.js?raw'
+import mainRaw from './main.tsx?raw'
 import { describe, expect, it } from 'vitest'
 
 const manifest = JSON.parse(manifestRaw) as {
@@ -23,5 +25,11 @@ describe('Conexão Ela branding', () => {
   it('removes the old product name from public metadata', () => {
     const metadata = `${indexHtml}\n${JSON.stringify(manifest)}`
     expect(metadata).not.toMatch(/Bárbara Life|Diário da Bárbara/i)
+  })
+
+  it('uses a Conexão Ela service-worker cache namespace', () => {
+    expect(serviceWorkerRaw).toContain("const CACHE_PREFIX = 'conexao-ela-'")
+    expect(serviceWorkerRaw).toContain("const CACHE_NAME = 'conexao-ela-shell-v5-private-vary-range-safe'")
+    expect(mainRaw).toContain('conexao-ela-shell-v5-private-vary-range-safe')
   })
 })
