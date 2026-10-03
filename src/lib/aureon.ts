@@ -1,8 +1,8 @@
 const API_URL = String(import.meta.env.VITE_AUREON_API_URL || 'https://aureon-base-production.up.railway.app').replace(/\/$/, '')
-export const PROJECT_SLUG = 'barbara-life'
+export const PROJECT_SLUG = 'conexao-ela'
 
-const ACCESS_KEY = 'barbara_life_access_token'
-const REFRESH_KEY = 'barbara_life_refresh_token'
+const ACCESS_KEY = 'conexao_ela_access_token'
+const REFRESH_KEY = 'conexao_ela_refresh_token'
 
 export type ProjectRole = 'owner' | 'admin' | 'member'
 
