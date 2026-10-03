@@ -38,10 +38,6 @@ function AuthScreen({ onLogin }: { onLogin: (user: AureonUser, notice?: string) 
   const [error, setError] = useState('')
   const [statusMessage, setStatusMessage] = useState('')
   const [loading, setLoading] = useState(false)
-  const [recoveryMode, setRecoveryMode] = useState<'none' | 'request' | 'reset'>('none')
-  const [resetToken, setResetToken] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmNewPassword, setConfirmNewPassword] = useState('')
 
   function switchMode(next: 'login' | 'signup') {
     setMode(next)
@@ -49,33 +45,6 @@ function AuthScreen({ onLogin }: { onLogin: (user: AureonUser, notice?: string) 
     setStatusMessage('')
     setPassword('')
     setConfirmPassword('')
-  }
-
-  async function requestReset(event: FormEvent) {
-    event.preventDefault()
-    setLoading(true); setError(''); setStatusMessage('')
-    try {
-      await aureon.auth.requestPasswordReset(email)
-      setRecoveryMode('reset')
-      setStatusMessage('Enviamos o código de recuperação para seu e-mail. Digite o código e escolha uma nova senha.')
-    } catch {
-      setError('Não foi possível iniciar a recuperação agora. Confira o e-mail e tente novamente.')
-    } finally { setLoading(false) }
-  }
-
-  async function finishReset(event: FormEvent) {
-    event.preventDefault()
-    setLoading(true); setError(''); setStatusMessage('')
-    if (newPassword.length < 10) { setLoading(false); return setError('A nova senha precisa ter pelo menos 10 caracteres.') }
-    if (newPassword !== confirmNewPassword) { setLoading(false); return setError('As novas senhas não são iguais.') }
-    try {
-      await aureon.auth.resetPassword(email, resetToken, newPassword)
-      setRecoveryMode('none'); setResetToken(''); setNewPassword(''); setConfirmNewPassword('')
-      setPassword('')
-      setStatusMessage('Senha redefinida com sucesso. Agora entre com sua nova senha.')
-    } catch {
-      setError('Código inválido ou expirado. Solicite um novo código e tente novamente.')
-    } finally { setLoading(false) }
   }
 
   async function submit(event: FormEvent) {
@@ -145,25 +114,7 @@ function AuthScreen({ onLogin }: { onLogin: (user: AureonUser, notice?: string) 
           <button type="button" className={mode === 'signup' ? 'active' : ''} onClick={() => switchMode('signup')}>Criar minha conta</button>
         </div>
 
-        {recoveryMode === 'request' ? (
-          <form className="form-stack" onSubmit={requestReset}>
-            <label className="field"><span>E-mail</span><input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
-            {statusMessage && <div className="form-message success">{statusMessage}</div>}
-            {error && <div className="form-message error">{error}</div>}
-            <button className="primary-button" disabled={loading}>{loading ? 'Aguarde…' : 'Enviar código de recuperação'}</button>
-            <button className="secondary-button" type="button" onClick={() => { setRecoveryMode('none'); setError(''); setStatusMessage('') }}>Voltar para entrar</button>
-          </form>
-        ) : recoveryMode === 'reset' ? (
-          <form className="form-stack" onSubmit={finishReset}>
-            <label className="field"><span>Código recebido por e-mail</span><input value={resetToken} onChange={(e) => setResetToken(e.target.value)} required /></label>
-            <label className="field"><span>Nova senha</span><input type="password" minLength={10} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required /></label>
-            <label className="field"><span>Confirmar nova senha</span><input type="password" minLength={10} value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} required /></label>
-            {statusMessage && <div className="form-message success">{statusMessage}</div>}
-            {error && <div className="form-message error">{error}</div>}
-            <button className="primary-button" disabled={loading}>{loading ? 'Aguarde…' : 'Redefinir senha'}</button>
-            <button className="secondary-button" type="button" onClick={() => { setRecoveryMode('request'); setError(''); setStatusMessage('') }}>Solicitar outro código</button>
-          </form>
-        ) : <form className="form-stack" onSubmit={submit}>
+        <form className="form-stack" onSubmit={submit}>
           {mode === 'signup' && (
             <label className="field"><span>Nome</span><input type="text" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} required /></label>
           )}
@@ -178,10 +129,7 @@ function AuthScreen({ onLogin }: { onLogin: (user: AureonUser, notice?: string) 
           {statusMessage && <div className="form-message success">{statusMessage}</div>}
           {error && <div className="form-message error">{error}</div>}
           <button className="primary-button" disabled={loading}>{loading ? 'Aguarde…' : mode === 'login' ? 'Entrar' : 'Criar minha conta'}</button>
-        </form>}
-        {mode === 'login' && recoveryMode === 'none' && (
-          <button className="auth-note" type="button" onClick={() => { setRecoveryMode('request'); setError(''); setStatusMessage('') }}>Esqueci minha senha</button>
-        )}
+        </form>
 
         <small className="auth-note">{mode === 'login' ? 'Ainda não tem conta? Crie gratuitamente.' : 'Cadastro gratuito e acesso permanente.'}</small>
       </section>
