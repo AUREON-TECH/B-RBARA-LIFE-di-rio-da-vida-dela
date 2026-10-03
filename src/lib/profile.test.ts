@@ -68,3 +68,12 @@ describe('Conexão Ela profile helpers', () => {
     expect(localStorage.getItem('barbara_life_diary_pin_v1')).toBe(JSON.stringify(record))
   })
 })
+
+
+describe('profile identity helper', () => {
+  it("uses the current user's initial instead of a fixed Bárbara initial", () => {
+    expect(profileInitial('Mariana')).toBe('M')
+    expect(profileInitial('  ana')).toBe('A')
+    expect(profileInitial('')).toBe('E')
+  })
+})
