@@ -8,6 +8,7 @@ import {
   loadDiaryPinRecord,
   normalizeTheme,
   profileImageDataUrl,
+  profileInitial,
   profilePhotoKey,
   saveDiaryPinRecord,
   verifyDiaryPin,
@@ -201,7 +202,7 @@ export function ProfilePage({ userId, email, onLogout, onPasswordChanged }: Prop
     <div className="page-stack profile-page">
       <section className="profile-hero profile-hero-upgraded">
         <div className="profile-photo-wrap">
-          {photoUrl ? <img className="profile-photo" src={photoUrl} alt="Foto de perfil" /> : <div className="avatar profile-avatar">B</div>}
+          {photoUrl ? <img className="profile-photo" src={photoUrl} alt="Foto de perfil" /> : <div className="avatar profile-avatar">{profileInitial(profile.display_name)}</div>}
           <label className="photo-edit-button">
             <span>{uploading ? '…' : '📷'}</span>
             <input type="file" accept="image/*" capture="user" onChange={(event) => void uploadPhoto(event)} disabled={uploading} />
