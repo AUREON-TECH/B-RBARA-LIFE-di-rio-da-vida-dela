@@ -6,9 +6,12 @@ import { validateSignup, type SignupError } from './lib/signup'
 import { saveSessionNotice, takeSessionNotice } from './lib/sessionNotice'
 import { BeautyPage, DiaryPage, EvolutionPage, GoalsPage, HealthPage, TodayPage } from './pages'
 import { ProfilePage } from './ProfilePage'
+import { CommunityPage, CommunityChatPage } from './SocialPages'
 
 const navigation = [
   ['/', '⌂', 'Hoje'],
+  ['/comunidade', '♥', 'Comunidade'],
+  ['/chat', '✉', 'Chat'],
   ['/metas', '◎', 'Metas'],
   ['/diario', '✎', 'Diário'],
   ['/saude', '♡', 'Saúde'],
@@ -85,8 +88,8 @@ function AuthScreen({ onLogin }: { onLogin: (user: AureonUser, notice?: string) 
       const code = (caught as Error & { code?: string }).code
       if (code === 'approval_pending') {
         setStatusMessage(mode === 'signup'
-          ? 'Cadastro enviado com sucesso. Agora é só aguardar a aprovação da Bárbara. Depois, volte em Entrar e use este mesmo e-mail e senha.'
-          : 'Seu cadastro está aguardando aprovação da Bárbara. Assim que ela aprovar, você entra com este mesmo e-mail e senha.')
+          ? 'Cadastro enviado com sucesso. Agora é só aguardar a aprovação da administração. Depois, volte em Entrar e use este mesmo e-mail e senha.'
+          : 'Seu cadastro está aguardando aprovação da administração. Assim que ela aprovar, você entra com este mesmo e-mail e senha.')
       } else if (code === 'approval_rejected') {
         setError('Seu pedido de acesso não foi aprovado. Fale com a administração do Conexão Ela.')
       } else if (mode === 'signup' && code === 'email_already_exists') {
@@ -304,6 +307,8 @@ function AppShell({ user, onLogout, onPasswordChanged }: { user: AureonUser; onL
         {notice && <div className="global-notice" role="status">{notice}</div>}
         <Routes>
           <Route path="/" element={<TodayPage userId={user.id} />} />
+          <Route path="/comunidade" element={<CommunityPage userId={user.id} />} />
+          <Route path="/chat" element={<CommunityChatPage userId={user.id} />} />
           <Route path="/metas" element={<GoalsPage userId={user.id} />} />
           <Route path="/diario" element={<DiaryGate userId={user.id} />} />
           <Route path="/saude" element={<HealthPage userId={user.id} />} />
@@ -311,7 +316,6 @@ function AppShell({ user, onLogout, onPasswordChanged }: { user: AureonUser; onL
           <Route path="/evolucao" element={<EvolutionPage userId={user.id} />} />
           <Route path="/perfil" element={<ProfilePage userId={user.id} email={user.email} onLogout={onLogout} onPasswordChanged={onPasswordChanged} />} />
           <Route path="/admin" element={admin ? <AdminPage /> : <Navigate to="/" replace />} />
-          <Route path="/barbara" element={<Navigate to="/perfil" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
