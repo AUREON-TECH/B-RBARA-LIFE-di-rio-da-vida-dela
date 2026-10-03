@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { DIARY_PIN_STORAGE_KEY, THEME_STORAGE_KEY, isDiaryPinValid, isProfileImageSizeAllowed, loadDiaryPinRecord, normalizeTheme, profilePhotoKey, restoreTheme } from './profile'
+import { DIARY_PIN_STORAGE_KEY, THEME_STORAGE_KEY, isDiaryPinValid, isProfileImageSizeAllowed, loadDiaryPinRecord, normalizeTheme, profileInitial, profilePhotoKey, restoreTheme } from './profile'
 
 describe('Conexão Ela profile helpers', () => {
   it('accepts only supported profile themes', () => {
