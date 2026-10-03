@@ -1,4 +1,4 @@
-const API_URL = String(import.meta.env.VITE_AUREON_API_URL || 'https://aureonbase.vercel.app').replace(/\/$/, '')
+const API_URL = String(import.meta.env.VITE_AUREON_API_URL || 'https://aureon-base-production.up.railway.app').replace(/\/$/, '')
 export const PROJECT_SLUG = 'barbara-life'
 
 const ACCESS_KEY = 'barbara_life_access_token'
