@@ -13,6 +13,11 @@ export type DiaryPinRecord = {
   hash: string
 }
 
+export function profileInitial(displayName: string) {
+  const normalized = String(displayName || '').trim()
+  return (normalized[0] || 'E').toUpperCase()
+}
+
 export function normalizeTheme(value: unknown): ProfileTheme {
   return value === 'light' || value === 'night' || value === 'rose' ? value : 'rose'
 }
