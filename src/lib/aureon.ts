@@ -4,10 +4,31 @@ export const PROJECT_SLUG = 'barbara-life'
 const ACCESS_KEY = 'barbara_life_access_token'
 const REFRESH_KEY = 'barbara_life_refresh_token'
 
+export type ProjectRole = 'owner' | 'admin' | 'member'
+
 export type AureonUser = {
   id: string
   email: string
   is_superadmin?: boolean
+  project_role?: ProjectRole
+}
+
+export type ApprovalRequest = {
+  user_id: string
+  email: string
+  display_name: string
+  status: 'pending' | 'approved' | 'rejected'
+  reviewed_by?: string | null
+  reviewed_at?: string | null
+  created_at: string
+  updated_at?: string
+}
+
+type ProjectAccessResponse = {
+  project?: { slug?: string; name?: string; role?: ProjectRole }
+  subscription?: Record<string, unknown> | null
+  approval?: { status?: 'none' | 'pending' | 'approved' | 'rejected'; display_name?: string }
+  access?: { allowed?: boolean; status?: string; reason?: string | null }
 }
 
 export type GoogleAuthConfig = {
@@ -40,10 +61,15 @@ export function isValidNewPassword(password: string) {
   return password.length >= 10 && password.length <= 128
 }
 
-export function buildRegistrationPayload(email: string, password: string) {
+export function isProjectAdminRole(role: ProjectRole | undefined) {
+  return role === 'admin' || role === 'owner'
+}
+
+export function buildRegistrationPayload(email: string, password: string, displayName = '') {
   return {
     email: email.trim().toLowerCase(),
     password,
+    display_name: displayName.trim(),
     project_slug: PROJECT_SLUG,
   }
 }
@@ -126,33 +152,69 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   return data as T
 }
 
+function codedError(code: string) {
+  const error = new Error(code) as Error & { code?: string }
+  error.code = code
+  return error
+}
+
+function userWithProjectRole(user: AureonUser, payload: ProjectAccessResponse) {
+  return {
+    ...user,
+    ...(payload.project?.role ? { project_role: payload.project.role } : {}),
+  }
+}
+
+function approvalCode(payload: ProjectAccessResponse) {
+  if (payload.approval?.status === 'rejected' || payload.access?.status === 'rejected') return 'approval_rejected'
+  if (payload.approval?.status === 'pending' || payload.access?.status === 'pending_approval') return 'approval_pending'
+  return ''
+}
+
 async function joinPublicProject() {
-  await request<{ access?: { allowed?: boolean } }>(`/projects/${PROJECT_SLUG}/join`, {
+  return request<ProjectAccessResponse>(`/projects/${PROJECT_SLUG}/join`, {
     method: 'POST',
     retry: false,
   })
 }
 
 async function assertProjectAccess(user: AureonUser, options: { joinIfPublic?: boolean } = {}) {
-  const check = async () => request<{ access?: { allowed?: boolean } }>(`/projects/${PROJECT_SLUG}/access`)
+  const check = async () => request<ProjectAccessResponse>(`/projects/${PROJECT_SLUG}/access`)
   try {
     const access = await check()
-    if (access?.access?.allowed) return user
-    if (options.joinIfPublic) {
-      await joinPublicProject()
-      const joined = await check()
-      if (joined?.access?.allowed) return user
-    }
+    if (access?.access?.allowed) return userWithProjectRole(user, access)
   } catch (error) {
+    const code = (error as Error & { code?: string }).code
     const status = (error as Error & { status?: number }).status
+    if (code === 'approval_pending' || code === 'approval_rejected') {
+      clearTokens()
+      throw error
+    }
+
     if (options.joinIfPublic && (status === 402 || status === 403)) {
-      await joinPublicProject()
-      const joined = await check()
-      if (joined?.access?.allowed) return user
+      try {
+        const joined = await joinPublicProject()
+        const joinedApproval = approvalCode(joined)
+        if (joinedApproval) {
+          clearTokens()
+          throw codedError(joinedApproval)
+        }
+        if (joined?.access?.allowed) {
+          const checked = await check()
+          if (checked?.access?.allowed) return userWithProjectRole(user, checked)
+        }
+      } catch (joinError) {
+        const joinCode = (joinError as Error & { code?: string }).code
+        if (joinCode === 'approval_pending' || joinCode === 'approval_rejected') {
+          clearTokens()
+          throw joinError
+        }
+        throw joinError
+      }
     }
   }
   clearTokens()
-  throw new Error('project_access_denied')
+  throw codedError('project_access_denied')
 }
 
 async function listRecords<T extends Record<string, unknown>>(collection: string, limit = 500) {
@@ -191,18 +253,20 @@ export const aureon = {
         retry: false,
       })
       persistTokens(data)
-      await assertProjectAccess(data.user, { joinIfPublic: true })
-      return data.user
+      return assertProjectAccess(data.user, { joinIfPublic: true })
     },
-    async register(email: string, password: string) {
-      const data = await request<{ user: AureonUser; access_token: string; refresh_token: string }>('/auth/register', {
+    async register(email: string, password: string, displayName = '') {
+      const data = await request<{ user: AureonUser; access_token: string; refresh_token: string; approval?: { status?: string }; access?: { status?: string } }>('/auth/register', {
         method: 'POST',
-        body: JSON.stringify(buildRegistrationPayload(email, password)),
+        body: JSON.stringify(buildRegistrationPayload(email, password, displayName)),
         retry: false,
       })
       persistTokens(data)
-      await assertProjectAccess(data.user)
-      return data.user
+      if (data.approval?.status === 'pending' || data.access?.status === 'pending_approval') {
+        clearTokens()
+        throw codedError('approval_pending')
+      }
+      return assertProjectAccess(data.user)
     },
     async getGoogleConfig() {
       return request<GoogleAuthConfig>('/auth/google/config', { retry: false })
@@ -214,8 +278,7 @@ export const aureon = {
         retry: false,
       })
       persistTokens(data)
-      await assertProjectAccess(data.user)
-      return data.user
+      return assertProjectAccess(data.user)
     },
     async restore() {
       if (!accessToken && !refreshToken) return null
@@ -267,6 +330,21 @@ export const aureon = {
     },
     isAuthenticated() {
       return Boolean(accessToken || refreshToken)
+    },
+  },
+  admin: {
+    async listAccessRequests(status: 'pending' | 'approved' | 'rejected' | 'all' = 'pending') {
+      return request<ApprovalRequest[]>(`/projects/${PROJECT_SLUG}/admin/access-requests?status=${encodeURIComponent(status)}`)
+    },
+    async approveAccess(userId: string) {
+      return request<ProjectAccessResponse>(`/projects/${PROJECT_SLUG}/admin/access-requests/${encodeURIComponent(userId)}/approve`, {
+        method: 'POST',
+      })
+    },
+    async rejectAccess(userId: string) {
+      return request<{ user_id: string; display_name: string; status: 'rejected' }>(`/projects/${PROJECT_SLUG}/admin/access-requests/${encodeURIComponent(userId)}/reject`, {
+        method: 'POST',
+      })
     },
   },
   data: {
