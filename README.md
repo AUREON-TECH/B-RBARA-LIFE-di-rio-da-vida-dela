@@ -1,27 +1,23 @@
-# BÁRBARA LIFE
+# Conexão Ela
 
-Aplicativo PWA privado de diário, metas, autocuidado, beleza, saúde e evolução pessoal, criado exclusivamente para a Bárbara.
+Plataforma PWA de comunidade feminina criada para conexão, acolhimento, desenvolvimento e vida real.
+
+## Produto
+- Comunidade com publicações, fotos, apoio e comentários
+- Chat coletivo entre mulheres aprovadas
+- Perfil com foto e bio
+- Diário privado, metas, saúde, beleza, autocuidado e evolução
+- Aprovação de novas usuárias pela administração
+- PWA mobile-first
 
 ## Arquitetura
-
 - React + Vite + TypeScript
-- PWA instalável e mobile-first
-- Backend compartilhado AUREON Base em `https://aureonbase.vercel.app`
-- Tenant exclusivo: `barbara-life`
-- Dados pessoais armazenados em coleções `owner_scoped`
-- Acesso do app restrito ao e-mail autorizado da Bárbara
-- Sessão persistente com access/refresh token próprios do BÁRBARA LIFE
-- Sem cadastro público na interface
-- Recuperação de senha pelo AUREON Base
+- Frontend: GitHub Pages
+- Backend: AUREON Base no Railway
+- API: https://aureon-base-production.up.railway.app
+- Tenant: `conexao-ela`
+- Dados e conteúdo persistidos pelo AUREON Base
+- PostgreSQL no Railway
 
-## Dados isolados
-
-O projeto `barbara-life` possui ambientes próprios e coleções privadas para diário, metas, humor, bem-estar, autocuidado, memórias, sonhos, conquistas e lembretes. Cada registro é associado ao usuário autenticado pela camada de tenant do AUREON Base.
-
-## Publicação
-
-A produção é publicada pelo GitHub Pages a partir da branch `main` depois que testes e build passam no GitHub Actions.
-
-URL esperada:
-
-`https://raphaelbuenocaptacao-creator.github.io/B-RBARA-LIFE-di-rio-da-vida-dela/`
+## Produção
+https://aureon-tech.github.io/conexao-ela/
