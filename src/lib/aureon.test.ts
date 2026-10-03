@@ -16,7 +16,7 @@ describe('AUREON record helpers', () => {
       email: 'nova@example.test',
       password: '1234567890',
       display_name: 'Maria Silva',
-      project_slug: 'barbara-life',
+      project_slug: 'conexao-ela',
     })
   })
 
