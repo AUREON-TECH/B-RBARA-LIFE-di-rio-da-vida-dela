@@ -1,5 +1,5 @@
-const CACHE_PREFIX = 'barbara-life-'
-const CACHE_NAME = 'barbara-life-shell-v4-private-vary-range-safe'
+const CACHE_PREFIX = 'conexao-ela-'
+const CACHE_NAME = 'conexao-ela-shell-v5-private-vary-range-safe'
 const BASE = '/B-RBARA-LIFE-di-rio-da-vida-dela/'
 const APP_SHELL = [
   BASE,

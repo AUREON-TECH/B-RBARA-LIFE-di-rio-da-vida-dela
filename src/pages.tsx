@@ -108,7 +108,7 @@ export function TodayPage({ userId }: PageProps) {
   return (
     <div className="page-stack">
       <section className="hero-card">
-        <div><p className="eyebrow">{prettyDate()}</p><h1>{greeting()}, Bárbara <span aria-hidden="true">💗</span></h1><p className="hero-subtitle">Como você quer se sentir hoje?</p></div>
+        <div><p className="eyebrow">{prettyDate()}</p><h1>{greeting()}! <span aria-hidden="true">💗</span></h1><p className="hero-subtitle">Como você quer se sentir hoje?</p></div>
         <div className="soft-orb" aria-hidden="true">B</div>
       </section>
       <section className="card quote-card"><span className="card-kicker">Frase do dia</span><blockquote>“{getDailyQuote(new Date())}”</blockquote></section>
@@ -119,7 +119,7 @@ export function TodayPage({ userId }: PageProps) {
       <section className="card">
         <div className="section-heading"><div><span className="card-kicker">Minhas metas de hoje</span><h2>{completed} de {goals.length} concluídas — {completion}%</h2></div><span className="progress-badge">{completion}%</span></div>
         <div className="progress-track"><div className="progress-fill" style={{ width: `${completion}%` }} /></div>
-        {completion === 100 && goals.length > 0 && <div className="celebration">🎉 Você conseguiu, Bárbara! Dia concluído.</div>}
+        {completion === 100 && goals.length > 0 && <div className="celebration">🎉 Você conseguiu! Dia concluído.</div>}
         <div className="goal-list">{goals.length === 0 && <p className="empty-copy">Comece pequeno. Uma meta simples já transforma o ritmo do dia.</p>}{goals.map((goal) => <label className="goal-row" key={goal.id}><input type="checkbox" checked={goal.completed} onChange={() => void toggleGoal(goal)} /><span className={goal.completed ? 'done' : ''}>{goal.title}</span></label>)}</div>
         <form className="inline-form" onSubmit={addGoal}><input value={newGoal} onChange={(e) => setNewGoal(e.target.value)} placeholder="Adicionar uma meta para hoje" aria-label="Nova meta" /><button className="primary-button compact" type="submit">Adicionar</button></form>
       </section>
@@ -277,8 +277,4 @@ export function EvolutionPage({ userId }: PageProps) {
   const dominant = moods.length ? [...moods].sort((a, b) => moods.filter((v) => v === b).length - moods.filter((v) => v === a).length)[0] : '—'
 
   return <div className="page-stack"><section className="page-title"><span className="card-kicker">Minha evolução</span><h1>Olhe o caminho que você está construindo</h1><p>Pequenas constâncias viram grandes mudanças quando você consegue enxergá-las.</p></section><section className="stats-grid"><article className="stat-card"><strong>{diaryCount}</strong><span>páginas escritas este mês</span></article><article className="stat-card"><strong>{rate}%</strong><span>das metas concluídas</span></article><article className="stat-card"><strong>{dominant}</strong><span>humor predominante</span></article></section><section className="card"><span className="card-kicker">Minha semana 💗</span><h2>Olhe tudo o que você conseguiu fazer por você esta semana.</h2><div className="report-lines"><div><span>Metas concluídas</span><strong>{rate}%</strong></div><div><span>Dias registrando o diário</span><strong>{diaryCount}</strong></div><div><span>Humor predominante</span><strong>{dominant}</strong></div></div></section><section className="card"><span className="card-kicker">Conquistas</span><div className="achievement-grid"><div>🌸<strong>Primeira página</strong><small>{diaryCount > 0 ? 'Conquistado' : 'Continue escrevendo'}</small></div><div>🎯<strong>Focada</strong><small>{rate === 100 && goals.length ? 'Conquistado' : 'Em progresso'}</small></div><div>💗<strong>Consistência</strong><small>Um dia de cada vez</small></div></div></section></div>
-}
-
-export function ProfilePage({ email, onLogout }: { email: string; onLogout: () => Promise<void> }) {
-  return <div className="page-stack"><section className="profile-hero"><div className="avatar">B</div><div><span className="card-kicker">Bárbara Life</span><h1>Bárbara</h1><p>{email}</p></div></section><section className="card"><h2>Este é o seu espaço.</h2><p className="muted">Seus registros ficam ligados à sua conta e isolados no projeto BÁRBARA LIFE.</p><div className="privacy-list"><div>🔒 <span>Diário privado</span></div><div>💗 <span>Dados só da sua conta</span></div><div>☁️ <span>Sincronização pelo AUREON Base</span></div></div></section><button className="secondary-button danger" onClick={() => void onLogout()}>Sair da conta</button></div>
 }

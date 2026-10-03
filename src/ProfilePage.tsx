@@ -8,6 +8,7 @@ import {
   loadDiaryPinRecord,
   normalizeTheme,
   profileImageDataUrl,
+  profileInitial,
   profilePhotoKey,
   saveDiaryPinRecord,
   verifyDiaryPin,
@@ -33,7 +34,7 @@ type Props = {
 
 const EMPTY_PROFILE: ProfileData = {
   profile_key: 'main',
-  display_name: 'Bárbara',
+  display_name: 'Meu perfil',
   birthday: null,
   bio: null,
   theme: 'rose',
@@ -73,7 +74,7 @@ export function ProfilePage({ userId, email, onLogout, onPasswordChanged }: Prop
         const saved = rows.find((row) => row.profile_key === 'main')
         const next: ProfileData = saved ? {
           profile_key: 'main',
-          display_name: String(saved.display_name || 'Bárbara'),
+          display_name: String(saved.display_name || 'Meu perfil'),
           birthday: saved.birthday ? String(saved.birthday) : null,
           bio: saved.bio ? String(saved.bio) : null,
           theme: normalizeTheme(saved.theme),
@@ -113,7 +114,7 @@ export function ProfilePage({ userId, email, onLogout, onPasswordChanged }: Prop
     event.preventDefault()
     setSaving(true); setProfileError(''); setProfileMessage('')
     try {
-      const next = { ...profile, display_name: profile.display_name.trim() || 'Bárbara', bio: profile.bio?.trim() || null }
+      const next = { ...profile, display_name: profile.display_name.trim() || 'Meu perfil', bio: profile.bio?.trim() || null }
       await aureon.data.upsertByField<ProfileData>('profiles', 'profile_key', 'main', next)
       setProfile(next)
       setProfileMessage('Perfil salvo com carinho ✓')
@@ -201,13 +202,13 @@ export function ProfilePage({ userId, email, onLogout, onPasswordChanged }: Prop
     <div className="page-stack profile-page">
       <section className="profile-hero profile-hero-upgraded">
         <div className="profile-photo-wrap">
-          {photoUrl ? <img className="profile-photo" src={photoUrl} alt="Foto de perfil da Bárbara" /> : <div className="avatar profile-avatar">B</div>}
+          {photoUrl ? <img className="profile-photo" src={photoUrl} alt="Foto de perfil" /> : <div className="avatar profile-avatar">{profileInitial(profile.display_name)}</div>}
           <label className="photo-edit-button">
             <span>{uploading ? '…' : '📷'}</span>
             <input type="file" accept="image/*" capture="user" onChange={(event) => void uploadPhoto(event)} disabled={uploading} />
           </label>
         </div>
-        <div><span className="card-kicker">Bárbara Life</span><h1>{profile.display_name || 'Bárbara'}</h1><p>{email}</p><small>Seu perfil, do seu jeito.</small></div>
+        <div><span className="card-kicker">Conexão Ela</span><h1>{profile.display_name || 'Meu perfil'}</h1><p>{email}</p><small>Seu perfil, do seu jeito.</small></div>
       </section>
 
       {loading ? <section className="card"><p className="muted">Carregando seu perfil…</p></section> : (

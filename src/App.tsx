@@ -1,8 +1,9 @@
-import { FormEvent, useCallback, useEffect, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
-import { GoogleSignInButton } from './components/GoogleSignInButton'
-import { aureon, BARBARA_EMAIL, type AureonUser } from './lib/aureon'
+import { aureon, type AureonUser } from './lib/aureon'
 import { loadDiaryPinRecord, restoreTheme, verifyDiaryPin } from './lib/profile'
+import { validateSignup, type SignupError } from './lib/signup'
+import { saveSessionNotice, takeSessionNotice } from './lib/sessionNotice'
 import { BeautyPage, DiaryPage, EvolutionPage, GoalsPage, HealthPage, TodayPage } from './pages'
 import { ProfilePage } from './ProfilePage'
 
@@ -13,54 +14,121 @@ const navigation = [
   ['/saude', '♡', 'Saúde'],
   ['/beleza', '✦', 'Beleza'],
   ['/evolucao', '↗', 'Evolução'],
-  ['/barbara', '◌', 'Bárbara'],
+  ['/perfil', '◌', 'Perfil'],
 ] as const
 
-function LoginScreen({ onLogin }: { onLogin: (user: AureonUser) => void }) {
-  const [email, setEmail] = useState(BARBARA_EMAIL)
+function signupErrorMessage(error: SignupError) {
+  const messages: Record<SignupError, string> = {
+    name_required: 'Digite seu nome.',
+    invalid_email: 'Digite um e-mail válido.',
+    invalid_password: 'Sua senha precisa ter entre 10 e 128 caracteres.',
+    password_mismatch: 'As senhas não são iguais.',
+    terms_required: 'Aceite os termos e as regras da comunidade para continuar.',
+  }
+  return messages[error]
+}
+
+function AuthScreen({ onLogin }: { onLogin: (user: AureonUser, notice?: string) => void }) {
+  const [mode, setMode] = useState<'login' | 'signup'>('login')
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  async function signIn(event: FormEvent) {
+  function switchMode(next: 'login' | 'signup') {
+    setMode(next)
+    setError('')
+    setPassword('')
+    setConfirmPassword('')
+  }
+
+  async function submit(event: FormEvent) {
     event.preventDefault()
-    setLoading(true); setError('')
+    setLoading(true)
+    setError('')
     try {
-      const user = await aureon.auth.login(email, password)
-      onLogin(user)
-    } catch {
-      setError('Não foi possível entrar. Confira seu e-mail e sua senha.')
+      if (mode === 'login') {
+        const user = await aureon.auth.login(email, password)
+        onLogin(user)
+        return
+      }
+
+      const checked = validateSignup({ name, email, password, confirmPassword, acceptedTerms })
+      if (!checked.valid) {
+        setError(signupErrorMessage(checked.error))
+        return
+      }
+
+      const user = await aureon.auth.register(email, password)
+      let notice: string | undefined
+      try {
+        await aureon.data.upsertByField('profiles', 'profile_key', 'main', {
+          profile_key: 'main',
+          display_name: name.trim(),
+          birthday: null,
+          bio: null,
+          theme: 'rose',
+          photo_key: null,
+          photo_content_type: null,
+        })
+      } catch {
+        notice = 'Sua conta foi criada. Complete seu perfil quando quiser na aba Perfil.'
+      }
+      onLogin(user, notice)
+    } catch (caught) {
+      const code = (caught as Error & { code?: string }).code
+      if (mode === 'signup' && code === 'email_already_exists') {
+        setError('Este e-mail já possui uma conta. Entre com sua senha.')
+      } else {
+        setError(mode === 'login'
+          ? 'Não foi possível entrar. Confira seu e-mail e sua senha.'
+          : 'Não foi possível criar sua conta agora. Tente novamente.')
+      }
     } finally {
       setLoading(false)
     }
   }
 
-  const googleError = useCallback((message: string) => setError(message), [])
-
   return (
     <main className="auth-page">
       <section className="auth-card">
-        <div className="brand-mark">B</div>
-        <span className="card-kicker">BÁRBARA LIFE</span>
-        <h1>Bem-vinda ao seu espaço.</h1>
-        <p>Seu tempo, sua rotina, sua história — guardados com carinho.</p>
-        <form className="form-stack" onSubmit={signIn}>
+        <div className="brand-mark">CE</div>
+        <span className="card-kicker">CONEXÃO ELA</span>
+        <h1>{mode === 'login' ? 'Bem-vinda de volta.' : 'Seu espaço começa aqui.'}</h1>
+        <p>Conecte-se, compartilhe e cresça junto com outras mulheres.</p>
+
+        <div className="auth-mode-tabs" role="tablist" aria-label="Acesso">
+          <button type="button" className={mode === 'login' ? 'active' : ''} onClick={() => switchMode('login')}>Entrar</button>
+          <button type="button" className={mode === 'signup' ? 'active' : ''} onClick={() => switchMode('signup')}>Criar minha conta</button>
+        </div>
+
+        <form className="form-stack" onSubmit={submit}>
+          {mode === 'signup' && (
+            <label className="field"><span>Nome</span><input type="text" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} required /></label>
+          )}
           <label className="field"><span>E-mail</span><input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
-          <label className="field"><span>Senha</span><input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
+          <label className="field"><span>Senha</span><input type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} minLength={mode === 'signup' ? 10 : undefined} value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
+          {mode === 'signup' && (
+            <>
+              <label className="field"><span>Confirmar senha</span><input type="password" autoComplete="new-password" minLength={10} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required /></label>
+              <label className="terms-row"><input type="checkbox" checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} /><span>Li e aceito os termos e as regras da comunidade.</span></label>
+            </>
+          )}
           {error && <div className="form-message error">{error}</div>}
-          <button className="primary-button" disabled={loading}>{loading ? 'Entrando…' : 'Entrar com senha'}</button>
+          <button className="primary-button" disabled={loading}>{loading ? 'Aguarde…' : mode === 'login' ? 'Entrar' : 'Criar minha conta'}</button>
         </form>
-        <div className="auth-divider"><span>ou</span></div>
-        <GoogleSignInButton onLogin={onLogin} onError={googleError} />
-        <p className="google-recovery-copy">Esqueceu a senha? Use sua conta Google autorizada para voltar ao seu espaço.</p>
-        <small className="private-note">🔒 Acesso privado. Não existe cadastro público.</small>
+
+        <small className="auth-note">{mode === 'login' ? 'Ainda não tem conta? Crie gratuitamente.' : 'Cadastro gratuito e acesso permanente.'}</small>
       </section>
     </main>
   )
 }
 
 function LoadingScreen() {
-  return <main className="loading-page"><div className="loading-mark">B</div><p>Preparando seu espaço…</p></main>
+  return <main className="loading-page"><div className="loading-mark">CE</div><p>Preparando seu espaço…</p></main>
 }
 
 function DiaryGate({ userId }: { userId: string }) {
@@ -106,13 +174,15 @@ function DiaryGate({ userId }: { userId: string }) {
 }
 
 function AppShell({ user, onLogout, onPasswordChanged }: { user: AureonUser; onLogout: () => Promise<void>; onPasswordChanged: () => void }) {
+  const [notice] = useState(() => takeSessionNotice())
   return (
     <div className="app-frame">
       <header className="topbar">
-        <div className="mini-brand"><span>B</span><div><strong>Bárbara Life</strong><small>Seu espaço pessoal</small></div></div>
+        <div className="mini-brand"><span>CE</span><div><strong>Conexão Ela</strong><small>Conexão, comunidade e cuidado</small></div></div>
         <div className="topbar-heart" aria-hidden="true">♥</div>
       </header>
       <main className="content-area">
+        {notice && <div className="global-notice" role="status">{notice}</div>}
         <Routes>
           <Route path="/" element={<TodayPage userId={user.id} />} />
           <Route path="/metas" element={<GoalsPage userId={user.id} />} />
@@ -120,7 +190,8 @@ function AppShell({ user, onLogout, onPasswordChanged }: { user: AureonUser; onL
           <Route path="/saude" element={<HealthPage userId={user.id} />} />
           <Route path="/beleza" element={<BeautyPage userId={user.id} />} />
           <Route path="/evolucao" element={<EvolutionPage userId={user.id} />} />
-          <Route path="/barbara" element={<ProfilePage userId={user.id} email={user.email} onLogout={onLogout} onPasswordChanged={onPasswordChanged} />} />
+          <Route path="/perfil" element={<ProfilePage userId={user.id} email={user.email} onLogout={onLogout} onPasswordChanged={onPasswordChanged} />} />
+          <Route path="/barbara" element={<Navigate to="/perfil" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
@@ -155,6 +226,6 @@ export default function App() {
   }
 
   if (loading) return <LoadingScreen />
-  if (!user) return <LoginScreen onLogin={setUser} />
+  if (!user) return <AuthScreen onLogin={(nextUser, notice) => { if (notice) saveSessionNotice(notice); setUser(nextUser) }} />
   return <AppShell user={user} onLogout={logout} onPasswordChanged={() => setUser(null)} />
 }

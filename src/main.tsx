@@ -18,7 +18,7 @@ if ('serviceWorker' in navigator) {
     const isSecureContext = location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(location.hostname)
     if (!isSecureContext) return
 
-    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js?v=barbara-life-shell-v4-private-vary-range-safe`, {
+    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js?v=conexao-ela-shell-v5-private-vary-range-safe`, {
       scope: import.meta.env.BASE_URL,
       updateViaCache: 'none',
     }).then((registration) => registration.update()).catch(() => {
