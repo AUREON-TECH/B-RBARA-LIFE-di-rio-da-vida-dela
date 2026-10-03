@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildRegistrationPayload, flattenRecord, isValidNewPassword } from './aureon'
+import { buildRegistrationPayload, flattenRecord, isProjectAdminRole, isValidNewPassword } from './aureon'
 
 describe('AUREON record helpers', () => {
   it('flattens AUREON project records into app rows', () => {
@@ -12,11 +12,19 @@ describe('AUREON record helpers', () => {
   })
 
   it('builds a normalized Conexão Ela registration payload', () => {
-    expect(buildRegistrationPayload(' Nova@example.test ', '1234567890')).toEqual({
+    expect(buildRegistrationPayload(' Nova@example.test ', '1234567890', '  Maria Silva  ')).toEqual({
       email: 'nova@example.test',
       password: '1234567890',
+      display_name: 'Maria Silva',
       project_slug: 'barbara-life',
     })
+  })
+
+  it('recognizes project administrator roles', () => {
+    expect(isProjectAdminRole('admin')).toBe(true)
+    expect(isProjectAdminRole('owner')).toBe(true)
+    expect(isProjectAdminRole('member')).toBe(false)
+    expect(isProjectAdminRole(undefined)).toBe(false)
   })
 
   it('requires at least ten characters for a new password', () => {
